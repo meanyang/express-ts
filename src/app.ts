@@ -1,19 +1,32 @@
 import express from 'express';
-import redisClient from './utilites/redisClient';
-import redisRouter from './routes/redis';
+import { errorHandler } from './middlewares/errorHandler';
+import morgan from 'morgan';
+import config from './configs/config';
+import routes from './routes'; // Import unified route file
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = config.port;
 
-app.use(express.json()); 
+// Parse incoming JSON requests
+app.use(express.json());
+// Log HTTP requests
+app.use(morgan('dev')); 
 
-app.get('/', (req, res) => {
-    res.send('Hello Express.js and TypeScript!');
-});
+// Use unified routes
+app.use(routes);
 
-app.use('/', redisRouter);
+// Global error handling middleware
+app.use(errorHandler); 
 
-app.listen(port, async () => {
-    await redisClient.connect();
-    console.log(`Server is running on port ${port}`);
-})
+// Start the server and handle errors
+const startServer = async () => {
+    try {
+        app.listen(port, () => {
+            console.log(`Server is running on port ${port}`);
+        });
+    } catch (error) {
+        console.error(`Failed to start server on port ${port}:`, error);
+    }
+};
+
+startServer();
